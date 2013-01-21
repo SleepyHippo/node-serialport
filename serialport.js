@@ -22,6 +22,35 @@ var parsers = {
   raw: function (emitter, buffer) {
     emitter.emit("data", buffer);
   },
+  modemCT: function (delimiter) {
+    if (typeof delimiter === "undefined" || delimiter === null) { delimiter = "\r"; }
+    // Delimiter buffer saved in closure
+    var chunks = [];
+    return function (emitter, buffer) {
+      // Collect data
+      // console.log(Buffer.isBuffer(buffer));
+      for( var i = 0; i < buffer.length; ++i )
+      {
+        if( buffer[i] == delimiter.charCodeAt(0) )
+        { 
+          //include delimiter
+          var leftBuffer = buffer.slice(0, i+1);
+          chunks.push(leftBuffer);
+          var buf = Buffer.concat(chunks);//Buffer.concat(list, [totalLength]) can only use above Node 0.8 version.
+          emitter.emit('data', buf);
+          chunks = [];
+          if( buffer[i+1] )
+          {
+            var rightBuffer = buffer.slice(i+1, buffer.length);
+            chunks.push(rightBuffer);
+          }
+          return;
+        }
+      }
+      chunks.push(buffer);
+
+    };
+  },
   readline: function (delimiter) {
     if (typeof delimiter === "undefined" || delimiter === null) { delimiter = "\r"; }
     // Delimiter buffer saved in closure
